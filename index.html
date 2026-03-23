@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grocery Simple</title>
+    <title>FoodLover</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -24,6 +24,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -39,10 +40,11 @@
         .app-container {
             display: flex;
             flex-direction: column;
-            height: 100%;
-            max-width: 500px;
-            margin: 0 auto;
+            height: 100dvh;
+            width: 100%;
+            margin: 0;
             position: relative;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
         }
 
         header {
@@ -76,20 +78,22 @@
             align-items: center;
             perspective: 1000px;
             z-index: 5;
-            margin: 0 20px;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
         }
 
         .recipe-card {
             position: absolute;
-            width: 100%;
-            max-width: 350px;
-            height: 60vh;
+            width: calc(100% - 40px);
+            max-width: 450px;
+            height: 95%;
             background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 24px;
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+            border: 0.5px solid var(--card-border);
+            border-radius: 32px;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
             will-change: transform;
             display: flex;
             flex-direction: column;
@@ -106,19 +110,31 @@
             align-items: center;
             font-size: 3.5rem;
             color: rgba(255, 255, 255, 0.3);
+            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .recipe-card.is-expanded .card-image-placeholder {
+            height: 0;
+            opacity: 0;
+            pointer-events: none;
         }
 
         .card-content {
             padding: 24px;
+            padding-bottom: 12px;
+            /* Space for floating buttons */
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
+            overflow: hidden;
+            /* No scroll bar */
         }
 
         .card-content h2 {
             font-size: 1.4rem;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             line-height: 1.2;
         }
 
@@ -131,8 +147,16 @@
         .ingredients-list li {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 10px 0;
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .ingredients-list li:last-child {
+            border-bottom: none;
+        }
+
+        .ingredients-list.truncated li:nth-child(4) {
+            border-bottom: none;
         }
 
         .ingredients-list li span:last-child {
@@ -167,14 +191,20 @@
         }
 
         .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
             display: flex;
             justify-content: center;
-            gap: 35px;
+            gap: 40px;
             padding: 20px;
-            z-index: 10;
+            z-index: 100;
+            pointer-events: none;
         }
 
         .action-btn {
+            pointer-events: auto;
             width: 75px;
             height: 75px;
             border-radius: 50%;
@@ -200,32 +230,76 @@
 
         .reject-btn {
             color: var(--accent-reject);
-            border: 2px solid rgba(248, 113, 113, 0.3);
+            border: 2px solid rgba(248, 113, 113, 0.5);
+            background: rgba(248, 113, 113, 0.1);
         }
 
         .accept-btn {
             color: var(--accent-accept);
-            border: 2px solid rgba(74, 222, 128, 0.3);
+            border: 2px solid rgba(74, 222, 128, 0.5);
+            background: rgba(74, 222, 128, 0.1);
         }
 
-        .generate-btn {
-            margin: 0 20px 40px 20px;
-            padding: 20px;
+        .share-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .share-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--btn-primary);
+            color: white;
+            font-size: 0.7rem;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            border: 2px solid #1a1a2e;
+        }
+
+
+
+        .primary-btn {
+            padding: 18px;
             border-radius: 20px;
             border: none;
             background: var(--btn-primary);
             color: white;
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
             transition: all 0.2s;
-            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .generate-btn:hover {
+        .primary-btn:hover {
             background: var(--btn-primary-hover);
             transform: translateY(-2px);
+        }
+
+        .primary-btn:active {
+            transform: scale(0.98);
         }
 
         .modal {
@@ -236,7 +310,7 @@
             height: 100vh;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(12px);
-            z-index: 100;
+            z-index: 1000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -334,8 +408,8 @@
             justify-content: space-between;
             align-items: center;
             padding: 15px 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: auto;
+            border-top: 0.5px solid rgba(255, 255, 255, 0.15);
+            margin-top: 0;
         }
 
         .portion-btns {
@@ -373,16 +447,51 @@
 
         /* Scrollbar */
         ::-webkit-scrollbar {
-            width: 6px;
+            display: none;
         }
 
-        ::-webkit-scrollbar-track {
-            background: transparent;
+        * {
+            scrollbar-width: none;
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+        .expand-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 100%;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.3s;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .expand-btn svg {
+            transition: transform 0.3s;
+        }
+
+        .recipe-card.is-expanded .expand-btn svg {
+            transform: rotate(180deg);
+        }
+
+        .ingredients-list.truncated li:nth-child(n+5) {
+            display: none;
+        }
+
+        .recipe-card.is-expanded .ingredients-list.truncated li:nth-child(n+5) {
+            display: flex;
+        }
+
+        .recipe-card.is-expanded .card-content {
+            overflow-y: auto;
+            /* Allow scrolling ONLY when expanded if content is huge, but we hide scrollbar */
+        }
+
+        .portion-control {
+            margin-top: 0;
         }
 
         /* Form Styles */
@@ -426,12 +535,22 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 10px;
             font-size: 0.85rem;
-            min-width: 0; /* Allow shrinking */
+            min-width: 0;
+            /* Allow shrinking */
         }
 
-        .ingredient-row input.ing-name { flex: 1; }
-        .ingredient-row input.ing-qty { width: 55px; text-align: center; }
-        .ingredient-row input.ing-unit { width: 75px; }
+        .ingredient-row input.ing-name {
+            flex: 1;
+        }
+
+        .ingredient-row input.ing-qty {
+            width: 55px;
+            text-align: center;
+        }
+
+        .ingredient-row input.ing-unit {
+            width: 75px;
+        }
 
         .btn-small {
             padding: 8px 10px;
@@ -452,8 +571,6 @@
             height: 30px;
             flex-shrink: 0;
         }
-
-
     </style>
 </head>
 
@@ -471,8 +588,18 @@
                     </svg>
                 </button>
             </div>
-            <h1>Grocery Simple</h1>
-            <div class="header-right"></div>
+            <h1>FoodLover</h1>
+            <div class="header-right">
+                <button id="btnShare" class="share-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                        <polyline points="16 6 12 2 8 6"></polyline>
+                        <line x1="12" y1="2" x2="12" y2="15"></line>
+                    </svg>
+                    <span id="listCountBadge" class="btn-badge">0</span>
+                </button>
+            </div>
         </header>
 
         <div id="sidebarMenu" class="sidebar">
@@ -531,10 +658,6 @@
                 </svg>
             </button>
         </div>
-
-        <button id="btnGenerate" class="generate-btn">
-            Générer la liste (<span id="listCount">0</span>)
-        </button>
     </div>
 
     <!-- Modals (Simplified for inline) -->
@@ -549,10 +672,10 @@
             </div>
             <div id="tabGrocery" class="list-preview hidden">
                 <div id="listPreview"></div>
-                <button id="btnDownloadCSV" class="generate-btn" style="margin: 20px 0 0 0; width:100%;">Exporter
+                <button id="btnDownloadCSV" class="primary-btn" style="margin: 20px 0 0 0; width:100%;">Exporter
                     CSV</button>
             </div>
-            <button id="btnCloseModal" class="generate-btn"
+            <button id="btnCloseModal" class="primary-btn"
                 style="background:rgba(255,255,255,0.1); color:white; margin:15px 0 0 0; box-shadow:none;">Fermer</button>
         </div>
     </div>
@@ -578,7 +701,8 @@
                 </div>
 
                 <div style="margin-top: 10px; margin-bottom: 12px;">
-                    <label style="font-size: 0.9rem; color: var(--text-secondary); display: block; margin-bottom: 10px;">Ingrédients</label>
+                    <label
+                        style="font-size: 0.9rem; color: var(--text-secondary); display: block; margin-bottom: 10px;">Ingrédients</label>
                     <div id="ingredientsContainer">
                         <!-- Rows -->
                     </div>
@@ -587,9 +711,9 @@
             </div>
 
             <div style="display: flex; gap: 12px; margin-top: 25px;">
-                <button id="btnCancelAdd" class="generate-btn"
+                <button id="btnCancelAdd" class="primary-btn"
                     style="flex: 1; background: rgba(255,255,255,0.1); margin: 0; box-shadow: none;">Annuler</button>
-                <button id="btnSaveRecipe" class="generate-btn" style="flex: 1.5; margin: 0;">Enregistrer</button>
+                <button id="btnSaveRecipe" class="primary-btn" style="flex: 1.5; margin: 0;">Enregistrer</button>
             </div>
         </div>
     </div>
@@ -604,10 +728,10 @@
         let startX = 0, currentX = 0, startY = 0, currentY = 0;
 
         const cardArea = document.getElementById('cardArea');
-        const listCount = document.getElementById('listCount');
+        const listCount = document.getElementById('listCountBadge');
         const btnReject = document.getElementById('btnReject');
         const btnAccept = document.getElementById('btnAccept');
-        const btnGenerate = document.getElementById('btnGenerate');
+        const btnShare = document.getElementById('btnShare');
         const sidebarMenu = document.getElementById('sidebarMenu');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
         const resultModal = document.getElementById('resultModal');
@@ -662,13 +786,18 @@
                 card.style.zIndex = index;
                 if (!recipe.portions) recipe.portions = 2;
 
+                const showExpand = recipe.ingredients.length > 4;
                 card.innerHTML = `
                     <div class="card-badge like">OUI</div>
                     <div class="card-badge nope">NON</div>
                     <div class="card-image-placeholder">${recipe.icon || '🍽️'}</div>
                     <div class="card-content">
+                        ${showExpand ? `
+                        <button class="expand-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                        </button>` : ''}
                         <h2>${recipe.title}</h2>
-                        <ul class="ingredients-list">
+                        <ul class="ingredients-list ${showExpand ? 'truncated' : ''}">
                             ${recipe.ingredients.map(ing => {
                     const qty = Math.ceil(ing.qty * (recipe.portions / 2) * 10) / 10;
                     return `<li><span>${ing.name}</span><span>${qty} ${ing.unit}</span></li>`;
@@ -692,6 +821,14 @@
                     const plusBtn = card.querySelector('.plus-btn');
                     const portVal = card.querySelector('.portion-val');
                     const ingList = card.querySelector('.ingredients-list');
+                    const expandBtn = card.querySelector('.expand-btn');
+
+                    if (expandBtn) {
+                        expandBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            card.classList.toggle('is-expanded');
+                        });
+                    }
 
                     const updateUI = () => {
                         portVal.textContent = recipe.portions;
@@ -768,7 +905,14 @@
             setTimeout(renderCards, 300);
         }
 
-        function updateListCount() { listCount.textContent = acceptedRecipes.length; }
+        function updateListCount() {
+            if (listCount) listCount.textContent = acceptedRecipes.length;
+            if (acceptedRecipes.length > 0) {
+                listCount.style.display = 'flex';
+            } else {
+                listCount.style.display = 'none';
+            }
+        }
 
         // Sidebar & Buttons
         document.getElementById('btnMenuToggle').onclick = () => { sidebarMenu.classList.add('active'); sidebarOverlay.classList.remove('hidden'); };
@@ -778,23 +922,23 @@
         btnReject.onclick = () => { if (currentCard) { currentCard.querySelector('.nope').style.opacity = 1; swipeCard(-1); } };
         btnAccept.onclick = () => { if (currentCard) { currentCard.querySelector('.like').style.opacity = 1; swipeCard(1); } };
 
-            let finalListing = []; // Global scope for CSV export
+        let finalListing = []; // Global scope for CSV export
 
-            btnGenerate.onclick = () => {
-                if (acceptedRecipes.length === 0) return alert("Choisis des recettes d'abord !");
-                const list = {};
-                acceptedRecipes.forEach(r => {
-                    r.ingredients.forEach(i => {
-                        const key = i.name.toLowerCase() + '_' + i.unit;
-                        const qty = Math.ceil(i.qty * (r.portions / 2) * 10) / 10;
-                        if (list[key]) list[key].qty += qty;
-                        else list[key] = { name: i.name, qty, unit: i.unit };
-                    });
+        btnShare.onclick = () => {
+            if (acceptedRecipes.length === 0) return alert("Choisis des recettes d'abord !");
+            const list = {};
+            acceptedRecipes.forEach(r => {
+                r.ingredients.forEach(i => {
+                    const key = i.name.toLowerCase() + '_' + i.unit;
+                    const qty = Math.ceil(i.qty * (r.portions / 2) * 10) / 10;
+                    if (list[key]) list[key].qty += qty;
+                    else list[key] = { name: i.name, qty, unit: i.unit };
                 });
-                finalListing = Object.values(list).sort((a,b) => a.name.localeCompare(b.name));
+            });
+            finalListing = Object.values(list).sort((a, b) => a.name.localeCompare(b.name));
 
-                // 1. Menu Tab
-                document.getElementById('weekMenuPreview').innerHTML = acceptedRecipes.map(r => `
+            // 1. Menu Tab
+            document.getElementById('weekMenuPreview').innerHTML = acceptedRecipes.map(r => `
                     <div style="padding:18px; background:rgba(255,255,255,0.04); border-radius:20px; margin-bottom:15px; border:1px solid rgba(255,255,255,0.06);">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
                             <strong style="font-size:1.1rem; color:var(--text-primary); text-transform:capitalize;">${r.icon} ${r.title}</strong>
@@ -802,151 +946,151 @@
                         </div>
                         <ul class="ingredients-list" style="padding-left:0;">
                             ${r.ingredients.map(ing => {
-                                const qty = Math.ceil(ing.qty * (r.portions / 2) * 10) / 10;
-                                return `<li style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.9rem; border-bottom:1px solid rgba(255,255,255,0.02);"><span>${ing.name}</span><span>${qty} ${ing.unit}</span></li>`;
-                            }).join('')}
+                const qty = Math.ceil(ing.qty * (r.portions / 2) * 10) / 10;
+                return `<li style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.9rem; border-bottom:1px solid rgba(255,255,255,0.02);"><span>${ing.name}</span><span>${qty} ${ing.unit}</span></li>`;
+            }).join('')}
                         </ul>
                     </div>
                 `).join('');
 
-                // 2. Grocery Tab
-                document.getElementById('listPreview').innerHTML = finalListing.map(i => `
+            // 2. Grocery Tab
+            document.getElementById('listPreview').innerHTML = finalListing.map(i => `
                     <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
                         <span>${i.name}</span><span>${Math.ceil(i.qty * 10) / 10} ${i.unit}</span>
                     </div>
                 `).join('');
 
-                resultModal.classList.remove('hidden');
-            };
+            resultModal.classList.remove('hidden');
+        };
 
-            document.getElementById('btnDownloadCSV').onclick = () => {
-                if (!finalListing.length) return;
-                let csvContent = "\uFEFFIngrédient,Quantité,Unité\n";
-                finalListing.forEach(item => {
-                    const safeName = item.name.includes(',') ? `"${item.name}"` : item.name;
-                    csvContent += `${safeName},${item.qty},${item.unit}\n`;
-                });
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = "liste_epicerie.csv";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
+        document.getElementById('btnDownloadCSV').onclick = () => {
+            if (!finalListing.length) return;
+            let csvContent = "\uFEFFIngrédient,Quantité,Unité\n";
+            finalListing.forEach(item => {
+                const safeName = item.name.includes(',') ? `"${item.name}"` : item.name;
+                csvContent += `${safeName},${item.qty},${item.unit}\n`;
+            });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "liste_epicerie.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
 
-            document.getElementById('btnResetSession').onclick = () => {
-                if (confirm("Vider la liste actuelle ?")) {
-                    acceptedRecipes = [];
-                    updateListCount();
-                    sidebarMenu.classList.remove('active');
-                    sidebarOverlay.classList.add('hidden');
-                    loadBaseRecipes();
-                }
-            };
+        document.getElementById('btnResetSession').onclick = () => {
+            if (confirm("Vider la liste actuelle ?")) {
+                acceptedRecipes = [];
+                updateListCount();
+                sidebarMenu.classList.remove('active');
+                sidebarOverlay.classList.add('hidden');
+                loadBaseRecipes();
+            }
+        };
 
-            const addRecipeModal = document.getElementById('addRecipeModal');
-            const ingredientsContainer = document.getElementById('ingredientsContainer');
+        const addRecipeModal = document.getElementById('addRecipeModal');
+        const ingredientsContainer = document.getElementById('ingredientsContainer');
 
-            function createIngredientRow() {
-                const row = document.createElement('div');
-                row.className = 'ingredient-row';
-                row.innerHTML = `
+        function createIngredientRow() {
+            const row = document.createElement('div');
+            row.className = 'ingredient-row';
+            row.innerHTML = `
                     <input type="text" placeholder="Nom" class="ing-name">
                     <input type="number" placeholder="Qté" class="ing-qty" step="0.1">
                     <input type="text" placeholder="Unité" class="ing-unit">
                     <button class="btn-small btn-remove-ing">×</button>
                 `;
 
-                // Auto-add next row
-                const inputs = row.querySelectorAll('input');
-                inputs.forEach(input => {
-                    input.oninput = () => {
-                        // If this is the last row and we're typing something, add a new row
-                        if (row === ingredientsContainer.lastElementChild) {
-                            if (inputs[0].value.trim() !== "" || inputs[1].value !== "" || inputs[2].value.trim() !== "") {
-                                createIngredientRow();
-                            }
+            // Auto-add next row
+            const inputs = row.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.oninput = () => {
+                    // If this is the last row and we're typing something, add a new row
+                    if (row === ingredientsContainer.lastElementChild) {
+                        if (inputs[0].value.trim() !== "" || inputs[1].value !== "" || inputs[2].value.trim() !== "") {
+                            createIngredientRow();
                         }
-                    };
-                });
-
-                row.querySelector('.btn-remove-ing').onclick = () => {
-                    // Don't remove if it's the only one left and it's empty
-                    if (ingredientsContainer.children.length > 1) {
-                        row.remove();
-                    } else {
-                        inputs.forEach(i => i.value = '');
                     }
                 };
-                ingredientsContainer.appendChild(row);
-            }
+            });
 
-            // Remove this listener as we use auto-add now
-            // document.getElementById('btnAddIngredientRow').onclick = createIngredientRow;
+            row.querySelector('.btn-remove-ing').onclick = () => {
+                // Don't remove if it's the only one left and it's empty
+                if (ingredientsContainer.children.length > 1) {
+                    row.remove();
+                } else {
+                    inputs.forEach(i => i.value = '');
+                }
+            };
+            ingredientsContainer.appendChild(row);
+        }
+
+        // Remove this listener as we use auto-add now
+        // document.getElementById('btnAddIngredientRow').onclick = createIngredientRow;
 
 
-            document.getElementById('btnAddRecipeModal').onclick = () => {
-                addRecipeModal.classList.remove('hidden');
-                sidebarMenu.classList.remove('active');
-                sidebarOverlay.classList.add('hidden');
-                if (ingredientsContainer.children.length === 0) createIngredientRow();
+        document.getElementById('btnAddRecipeModal').onclick = () => {
+            addRecipeModal.classList.remove('hidden');
+            sidebarMenu.classList.remove('active');
+            sidebarOverlay.classList.add('hidden');
+            if (ingredientsContainer.children.length === 0) createIngredientRow();
+        };
+
+        document.getElementById('btnCancelAdd').onclick = () => {
+            addRecipeModal.classList.add('hidden');
+        };
+
+        document.getElementById('btnSaveRecipe').onclick = () => {
+            const title = document.getElementById('recipeTitle').value.trim();
+            const icon = document.getElementById('recipeIcon').value.trim();
+            const portions = parseInt(document.getElementById('recipePortions').value);
+
+            if (!title) return alert("Veuillez entrer un titre !");
+
+            const ingredients = [];
+            const rows = ingredientsContainer.querySelectorAll('.ingredient-row');
+            rows.forEach(r => {
+                const inputs = r.querySelectorAll('input');
+                const name = inputs[0].value.trim();
+                const qty = parseFloat(inputs[1].value);
+                const unit = inputs[2].value.trim();
+                if (name && !isNaN(qty)) {
+                    ingredients.push({ name, qty, unit });
+                }
+            });
+
+            if (ingredients.length === 0) return alert("Ajoutez au moins un ingrédient !");
+
+            const newRecipe = {
+                id: Date.now(),
+                title: title,
+                icon: icon || '🍽️',
+                portions: portions || 2,
+                ingredients: ingredients
             };
 
-            document.getElementById('btnCancelAdd').onclick = () => {
-                addRecipeModal.classList.add('hidden');
-            };
+            // Add to start of deck
+            activeRecipes.unshift(newRecipe);
+            renderCards();
 
-            document.getElementById('btnSaveRecipe').onclick = () => {
-                const title = document.getElementById('recipeTitle').value.trim();
-                const icon = document.getElementById('recipeIcon').value.trim();
-                const portions = parseInt(document.getElementById('recipePortions').value);
+            // Close and reset
+            addRecipeModal.classList.add('hidden');
+            document.getElementById('recipeTitle').value = '';
+            document.getElementById('recipeIcon').value = '🍽️';
+            document.getElementById('recipePortions').value = '2';
+            ingredientsContainer.innerHTML = '';
 
-                if (!title) return alert("Veuillez entrer un titre !");
+            // Trigger Email
+            const jsonStr = JSON.stringify(newRecipe, null, 2);
+            const mailSubject = "FoodLover New Recipe";
+            const mailBody = `Voici une nouvelle recette :\n\n${jsonStr}`;
+            const mailTo = `mailto:oligermain15@gmail.com?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
+            window.location.href = mailTo;
+        };
 
-                const ingredients = [];
-                const rows = ingredientsContainer.querySelectorAll('.ingredient-row');
-                rows.forEach(r => {
-                    const inputs = r.querySelectorAll('input');
-                    const name = inputs[0].value.trim();
-                    const qty = parseFloat(inputs[1].value);
-                    const unit = inputs[2].value.trim();
-                    if (name && !isNaN(qty)) {
-                        ingredients.push({ name, qty, unit });
-                    }
-                });
-
-                if (ingredients.length === 0) return alert("Ajoutez au moins un ingrédient !");
-
-                const newRecipe = {
-                    id: Date.now(),
-                    title: title,
-                    icon: icon || '🍽️',
-                    portions: portions || 2,
-                    ingredients: ingredients
-                };
-
-                // Add to start of deck
-                activeRecipes.unshift(newRecipe);
-                renderCards();
-
-                // Close and reset
-                addRecipeModal.classList.add('hidden');
-                document.getElementById('recipeTitle').value = '';
-                document.getElementById('recipeIcon').value = '🍽️';
-                document.getElementById('recipePortions').value = '2';
-                ingredientsContainer.innerHTML = '';
-
-                // Trigger Email
-                const jsonStr = JSON.stringify(newRecipe, null, 2);
-                const mailSubject = "FoodLover New Recipe";
-                const mailBody = `Voici une nouvelle recette :\n\n${jsonStr}`;
-                const mailTo = `mailto:oligermain15@gmail.com?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
-                window.location.href = mailTo;
-            };
-
-            document.getElementById('btnCloseModal').onclick = () => resultModal.classList.add('hidden');
+        document.getElementById('btnCloseModal').onclick = () => resultModal.classList.add('hidden');
 
 
 
@@ -961,6 +1105,7 @@
         });
 
         // Initialize
+        updateListCount();
         if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', loadBaseRecipes);
         else loadBaseRecipes();
 
